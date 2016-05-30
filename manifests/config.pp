@@ -61,6 +61,8 @@ class foreman::config {
     ensure  => absent,
   }
 
+  class { '::foreman::config::security': } -> anchor { 'foreman::config_end': }
+
   if $::foreman::passenger  {
     class { '::foreman::config::passenger': } -> anchor { 'foreman::config_end': }
 

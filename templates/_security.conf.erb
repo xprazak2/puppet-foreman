@@ -1,0 +1,29 @@
+<IfModule mod_security.c>
+  SecRuleEngine On
+  SecRequestBodyAccess On
+  SecResponseBodyAccess On
+
+  <LocationMatch /users/login>
+    # Retrieve the username
+    SecAction phase:2,nolog,pass,initcol:USER=%{ARGS.username}
+
+    # Enforce an existing username block
+    SecRule USER:bf_block "@eq 1" \
+            "phase:2,deny,\
+            msg:'Username \"%{ARGS.username}\" blocked because of suspected brute-force attack'"
+
+    # Check that this is a POST
+    SecRule REQUEST_METHOD "@streq POST" "phase:5,chain,t:none,nolog,pass"
+            # AND Check for authentication failure and increment counters
+            # NOTE this is for a Rails application, you probably need to customize this
+            SecRule RESPONSE_STATUS "^200" \
+                    "setvar:IP.bf_counter=+1"
+
+    # Check for too many failures for a single username, block for x minutes after y failures
+    SecRule USER:bf_counter "@ge <%= @max_failed_attempts %>" \
+            "phase:5,t:none,pass,\
+            setvar:USER.bf_block,\
+            setvar:!USER.bf_counter,\
+            expirevar:USER.bf_block=<%= @blacklist_period %>"
+  </LocationMatch>
+</IfModule>

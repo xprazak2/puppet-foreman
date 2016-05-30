@@ -53,6 +53,10 @@
 #                             (Seconds the server will wait for subsequent requests on a persistent connection)
 #                             type:integer
 #
+# $max_login_attempts::       Number of failed attemtps before user gets blacklisted
+#
+# $blacklist_period::         Time in seconds a user stays blacklisted when reached max number of failed login attempts
+#
 class foreman::config::passenger(
   $app_root               = $::foreman::app_root,
   $listen_on_interface    = $::foreman::passenger_interface,
@@ -76,6 +80,8 @@ class foreman::config::passenger(
   $keepalive              = $::foreman::keepalive,
   $max_keepalive_requests = $::foreman::max_keepalive_requests,
   $keepalive_timeout      = $::foreman::keepalive_timeout,
+  $max_login_attempts     = $::foreman::max_login_attempts,
+  $blacklist_period       = $::foreman::blacklist_period,
 ) {
   # validate parameter values
   if $listen_on_interface {
@@ -101,6 +107,7 @@ class foreman::config::passenger(
 
   include ::apache
   include ::apache::mod::headers
+  include ::apache::mod::security
   include ::apache::mod::passenger
   Class['::apache'] -> anchor { 'foreman::config::passenger_end': }
 
@@ -152,7 +159,8 @@ class foreman::config::passenger(
       servername              => $servername,
       serveraliases           => $serveraliases,
       custom_fragment         => template('foreman/_assets.conf.erb', 'foreman/_virt_host_include.erb',
-                                          'foreman/_suburi.conf.erb', 'foreman/_keepalive.erb'),
+                                          'foreman/_suburi.conf.erb', 'foreman/_keepalive.erb',
+                                          'foreman/_security.conf.erb'),
     }
 
     if $ssl {
@@ -203,7 +211,8 @@ class foreman::config::passenger(
         ssl_options             => '+StdEnvVars +ExportCertData',
         ssl_verify_depth        => '3',
         custom_fragment         => template('foreman/_assets.conf.erb', 'foreman/_ssl_virt_host_include.erb',
-                                            'foreman/_suburi.conf.erb', 'foreman/_keepalive.erb'),
+                                            'foreman/_suburi.conf.erb', 'foreman/_keepalive.erb',
+                                            'foreman/_security.conf.erb'),
       }
     }
   } else {

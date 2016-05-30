@@ -61,6 +61,9 @@ class foreman::params {
   $puppetmaster_timeout = 60
   $puppetmaster_report_timeout = 60
 
+  $max_login_attempts = 3
+  $blacklist_period = 150
+
   # when undef, foreman-selinux will be installed if SELinux is enabled
   # setting to false/true will override this check (e.g. set to false on 1.1)
   $selinux     = undef

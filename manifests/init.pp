@@ -222,6 +222,10 @@
 #
 # $email_smtp_password::        password for mail server auth, if authentication login
 #
+# $max_login_attempts::         maximum number of failed attemts for a user before he gets blacklisted
+#
+# $blacklist_period::           time in seconds user has to wait when blacklisted before he can attempt to log in again
+#
 class foreman (
   $foreman_url               = $::foreman::params::foreman_url,
   $puppetrun                 = $::foreman::params::puppetrun,
@@ -311,6 +315,8 @@ class foreman (
   $email_smtp_authentication = $::foreman::params::email_smtp_authentication,
   $email_smtp_user_name      = $::foreman::params::email_smtp_user_name,
   $email_smtp_password       = $::foreman::params::email_smtp_password,
+  $max_login_failed_attempts = $::foreman::params::max_login_attempts,
+  $blacklist_period          = $::foreman::params::blacklist_period,
 ) inherits foreman::params {
   if $db_adapter == 'UNSET' {
     $db_adapter_real = $::foreman::db_type ? {
