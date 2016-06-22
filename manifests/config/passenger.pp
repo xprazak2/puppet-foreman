@@ -53,6 +53,9 @@
 #                             (Seconds the server will wait for subsequent requests on a persistent connection)
 #                             type:integer
 #
+# $max_login_attempts::       Number of failed attempts in a row that result user being blacklisted
+#
+# $blacklist_period::         Time in seconds; how long the user is not allowed to log in
 class foreman::config::passenger(
   $app_root               = $::foreman::app_root,
   $listen_on_interface    = $::foreman::passenger_interface,
@@ -76,6 +79,8 @@ class foreman::config::passenger(
   $keepalive              = $::foreman::keepalive,
   $max_keepalive_requests = $::foreman::max_keepalive_requests,
   $keepalive_timeout      = $::foreman::keepalive_timeout,
+  $max_login_attempts     = $::foreman::max_login_attempts,
+  $blacklist_period       = $::foreman::blacklist_period,
 ) {
   # validate parameter values
   if $listen_on_interface {
@@ -102,6 +107,16 @@ class foreman::config::passenger(
   include ::apache
   include ::apache::mod::headers
   include ::apache::mod::passenger
+  #include ::apache::mod::security
+
+  class {'apache::mod::security': 
+    allowed_methods => 'GET POST PUT PATCH HEAD OPTIONS DELETE',
+    content_types =>  'application/x-www-form-urlencoded|multipart/form-data|text/xml|application/xml|application/json|text/html|text/pson|text/plain',
+    #activated_rules => [],
+    #audit_log_parts=> 'ABCDEFGHIJKZ',
+    #modsec_secruleengine => 'DetectionOnly',
+  }
+
   Class['::apache'] -> anchor { 'foreman::config::passenger_end': }
 
   # Ensure the Version module is loaded as we need it in the Foreman vhosts
@@ -152,7 +167,8 @@ class foreman::config::passenger(
       servername              => $servername,
       serveraliases           => $serveraliases,
       custom_fragment         => template('foreman/_assets.conf.erb', 'foreman/_virt_host_include.erb',
-                                          'foreman/_suburi.conf.erb', 'foreman/_keepalive.erb'),
+                                          'foreman/_suburi.conf.erb', 'foreman/_keepalive.erb',
+					  'foreman/_security.conf.erb'),
     }
 
     if $ssl {
@@ -203,7 +219,8 @@ class foreman::config::passenger(
         ssl_options             => '+StdEnvVars +ExportCertData',
         ssl_verify_depth        => '3',
         custom_fragment         => template('foreman/_assets.conf.erb', 'foreman/_ssl_virt_host_include.erb',
-                                            'foreman/_suburi.conf.erb', 'foreman/_keepalive.erb'),
+                                            'foreman/_suburi.conf.erb', 'foreman/_keepalive.erb',
+					    'foreman/_security.conf.erb'),
       }
     }
   } else {

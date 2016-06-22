@@ -284,4 +284,9 @@ class foreman::params {
   $keepalive              = true
   $max_keepalive_requests = 100
   $keepalive_timeout      = 5
+
+  # mod_security
+  $blacklist_period = 150
+  $max_login_attempts = 3
+
 }
