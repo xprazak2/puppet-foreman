@@ -55,7 +55,13 @@ class foreman::params {
   $manage_user       = true
   $user              = 'foreman'
   $group             = 'foreman'
-  $user_groups       = ['puppet']
+
+  if defined(Class['puppet::server::install']) {
+    $user_groups = ['puppet']
+  } else {
+    $user_groups = []
+  }
+
   $rails_env         = 'production'
   $gpgcheck          = true
   $version           = 'present'
